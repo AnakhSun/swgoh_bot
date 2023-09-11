@@ -1,29 +1,82 @@
 import json
 import requests
+from tabulate import tabulate
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from bs4 import BeautifulSoup
 # Считываем данные из JSON файла
-with open('C:/Users/user/Desktop/swgoh_bot/data_swgoh_332.json', 'r', encoding='utf-8') as json_file:
-    data = json.load(json_file)
+guild_url = 'https://swgoh.gg/g/Z0kME2OMScC4ipNLpCpeSw/'
+
+
 
 wb = Workbook()
 
 # Удаляем начальную страницу (по умолчанию sheet)
 default_sheet = wb['Sheet']
-wb.remove(default_sheet)
 
-roles_url = 'https://swgoh.gg/g/Z0kME2OMScC4ipNLpCpeSw/'
+
+
 
 # Отправляем GET-запрос и создаем объект BeautifulSoup
-roles_response = requests.get(roles_url)
-roles_soup = BeautifulSoup(roles_response.text, 'html.parser')
+guild_response = requests.get(guild_url)
+guild_soup = BeautifulSoup(guild_response.text, 'html.parser')
+
+soup = guild_soup.select('body > div.container.p-t-md > div.content-container > div.content-container-primary.character-list > ul > li.media.list-group-item.p-0.b-t-0 > div > table > tbody')
+
+
+table_rows = guild_soup.find_all('tr')
+
+
+data_list = {}
+
+for row in table_rows:
+    data = row.find_all('td')
+    if len(data) > 1:
+        nickname = data[0].find('strong').text
+        gp = int(data[1].text)
+        rank = data[2].text.strip()
+        wins = data[3].text.strip()
+        losses = data[4].text.strip()
+        member_status = data[5].text.strip()
+
+        # Создайте словарь для текущей строки
+        row_data = {
+            #"Nickname": username,
+            "GP": gp,
+            "Rank": rank,
+            "Arena": wins,
+            "Fleet": losses,
+            "Role": member_status
+        }
+
+        # Добавьте словарь в список
+        data_list[nickname] = row_data
 
 player_roles = {}
+with open('C:/Users/user/Desktop/swgoh_bot/data_swgoh_332.json', 'r', encoding='utf-8') as json_file:
+    data = json.load(json_file)
+
+merged_data = {}
+
+# Пройдитесь по данным из второго файла и объедините их с данными из первого файла по имени
+for key2, value2 in data.items():
+    player_name = value2["player_name"]
+    if player_name in data_list:
+        data_list[player_name].update(value2)
+        merged_data[key2] = data_list[player_name]
+
+
+
+if merged_data != {}:
+    data = merged_data
+    with open('C:/Users/user/Desktop/swgoh_bot/data_swgoh_332.json', 'w', encoding='utf-8') as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=4)
+
 
 
 # Проходим по данным из JSON файла и записываем их в файл Excel
 for player_id, player_data in data.items():
+
     # Получаем имя игрока с сайта
     player_url = f'https://swgoh.gg/p/{player_id}/'
     response = requests.get(player_url)
@@ -50,6 +103,8 @@ for player_id, player_data in data.items():
         avg_energy = week_data.get('avg_energy', '')
         activ_gild_war = week_data.get('activ_gild_war', '')
         activ_battles = week_data.get('activ_battles', '')
+        role = player_data.get('Role', '')
+        lvl = player_data.get('lvl', '')
 
         # Создаем новый лист с именем недели
         ws = wb.create_sheet(title=week)
@@ -58,17 +113,16 @@ for player_id, player_data in data.items():
         headers = ["Player Name", "Galactic Power", "Player ID", "Level", "Role", "Average Energy", "Active Guild War", "Active Battles", "Plan"]
         ws.append(headers)
         # Записываем данные в файл Excel
-        row = [player_name, galactic_power, player_id, lvl, player_data.get('role', ''), avg_energy, activ_gild_war, activ_battles, player_data.get('plan', '')]
+        row = [player_name, galactic_power, player_id, lvl, role, avg_energy, activ_gild_war, activ_battles, player_data.get('plan', '')]
+        print(data_list.get('Role', ''))
         ws.append(row)
 
 # Обновляем исходный JSON файл с добавленными данными
-with open('your_json_file.json', 'w', encoding='utf-8') as json_file:
-    json.dump(data, json_file, ensure_ascii=False, indent=4)
+
 
 # Сохраняем файл Excel
-wb.save('output.xlsx')
+wb.remove(default_sheet)
 
-#/html/body/div[3]/div[1]/div[2]/ul/li[2]/div/table/tbody/tr[1]
-#/html/body/div[3]/div[1]/div[2]/ul/li[2]/div/table/tbody/tr[2]
+wb.save('output.xlsx')
 
 print("Данные успешно записаны в файл Excel и обновлены в исходном JSON файле.")
