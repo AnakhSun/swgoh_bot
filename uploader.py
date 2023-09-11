@@ -3,6 +3,7 @@ import requests
 from tabulate import tabulate
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
 from bs4 import BeautifulSoup
 # Считываем данные из JSON файла
 guild_url = 'https://swgoh.gg/g/Z0kME2OMScC4ipNLpCpeSw/'
@@ -15,6 +16,8 @@ wb = Workbook()
 default_sheet = wb['Sheet']
 
 
+def update_admin(text):
+    pass
 
 
 # Отправляем GET-запрос и создаем объект BeautifulSoup
@@ -76,7 +79,6 @@ if merged_data != {}:
 
 # Проходим по данным из JSON файла и записываем их в файл Excel
 for player_id, player_data in data.items():
-
     # Получаем имя игрока с сайта
     player_url = f'https://swgoh.gg/p/{player_id}/'
     response = requests.get(player_url)
@@ -110,7 +112,7 @@ for player_id, player_data in data.items():
         ws = wb.create_sheet(title=week)
 
         # Записываем заголовки столбцов
-        headers = ["Player Name", "Galactic Power", "Player ID", "Level", "Role", "Average Energy", "Active Guild War", "Active Battles", "Plan"]
+        headers = ["Player Name", "Galactic Power", "Player ID", "Level", "Role", "Energy", "GW", "TW", "Plan"]
         ws.append(headers)
         # Записываем данные в файл Excel
         row = [player_name, galactic_power, player_id, lvl, role, avg_energy, activ_gild_war, activ_battles, player_data.get('plan', '')]
@@ -118,11 +120,21 @@ for player_id, player_data in data.items():
         ws.append(row)
 
 # Обновляем исходный JSON файл с добавленными данными
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)  # Get the column letter (e.g., 'A', 'B', 'C', ...)
 
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)  # Add a little extra padding
+            ws.column_dimensions[column_letter].width = adjusted_width
 
 # Сохраняем файл Excel
 wb.remove(default_sheet)
-
 wb.save('output.xlsx')
 
 print("Данные успешно записаны в файл Excel и обновлены в исходном JSON файле.")
