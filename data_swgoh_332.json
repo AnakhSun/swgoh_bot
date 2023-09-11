@@ -1,0 +1,15 @@
+{
+    "481289748" : {
+        "lvl" : 85,
+        "role" : "officer",
+        "plan" : "фениксы, доктор афра",
+        "progress_in_week" : {
+            "09.09.2023" : {
+                "avg_energy": 600,
+                "activ_gild_war" : 9,
+                "activ_battles" : 9
+
+            }
+        }
+    }
+}
