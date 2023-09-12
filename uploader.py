@@ -9,15 +9,13 @@ from bs4 import BeautifulSoup
 guild_url = 'https://swgoh.gg/g/Z0kME2OMScC4ipNLpCpeSw/'
 
 
+def add_user():
+    pass
 
 wb = Workbook()
 
 # Удаляем начальную страницу (по умолчанию sheet)
 default_sheet = wb['Sheet']
-
-
-def update_admin(text):
-    pass
 
 
 # Отправляем GET-запрос и создаем объект BeautifulSoup
@@ -26,9 +24,7 @@ guild_soup = BeautifulSoup(guild_response.text, 'html.parser')
 
 soup = guild_soup.select('body > div.container.p-t-md > div.content-container > div.content-container-primary.character-list > ul > li.media.list-group-item.p-0.b-t-0 > div > table > tbody')
 
-
 table_rows = guild_soup.find_all('tr')
-
 
 data_list = {}
 
